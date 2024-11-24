@@ -1,44 +1,46 @@
-import pyttsx3 #pip install pyttsx3
-import speech_recognition as sr #pip install speechRecognition
+#jarvis\Scripts\activate
+import pyttsx3
+import speech_recognition as sr
 import datetime
-import wikipedia #pip install wikipedia
+import wikipedia
 import webbrowser
 import os
-import smtplib
-import pyaudio
-from googletrans import Translator
+import random
 from gtts import gTTS
+from translate import Translator
 
+engine = pyttsx3.init('espeak')
 
-
-
-
-engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-# print(voices[1].id)
 engine.setProperty('voice', voices[0].id)
-
+rate = engine.getProperty('rate')
+engine.setProperty('rate', rate - 50)
 
 def speak(audio):
     engine.say(audio)
     engine.runAndWait()
 
+def translate_text(text, dest_lang):
+    translator = Translator(to_lang=dest_lang)
+    translated_text = translator.translate(text)
+    return translated_text
+
+def speak_text(text, lang):
+    tts = gTTS(text=text, lang=lang, slow=False)
+    tts.save("output.mp3")
+    os.system("start output.mp3")
 
 def wishMe():
     hour = int(datetime.datetime.now().hour)
-    if hour>=0 and hour<12:
+    if hour >= 0 and hour < 12:
         speak("Good Morning!")
-
-    elif hour>=12 and hour<16:
-        speak("Good Afternoon!")   
+    elif hour >= 12 and hour < 16:
+        speak("Good Afternoon!")
     else:
-        speak("good evening")
-
-    speak("hello lucky I am Jarvis. Please tell me how can I help you")       
+        speak("Good Evening")
+    speak("Hello, I am Jarvis. Please tell me how I can help you")
 
 def takeCommand():
-    #It takes microphone input from the user and returns string output
-
     r = sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
@@ -46,16 +48,14 @@ def takeCommand():
         audio = r.listen(source)
 
     try:
-        print("Recognizing...")    
+        print("Recognizing...")
         query = r.recognize_google(audio, language='en-in')
         print(f"User said: {query}\n")
-
     except Exception as e:
-        # print(e)    
-        print("Say that again please...")  
-        return "None"
+        print("Say that again please...")
+        speak("Say that again please...")
+        return None
     return query
-
 
 language_codes = {
     'afrikaans': 'af',
@@ -72,7 +72,7 @@ language_codes = {
     'catalan': 'ca',
     'cebuano': 'ceb',
     'chichewa': 'ny',
-    'chinese': 'zh-CN',  # Simplified Chinese
+    'chinese': 'zh-CN',
     'corsican': 'co',
     'croatian': 'hr',
     'czech': 'cs',
@@ -166,23 +166,58 @@ language_codes = {
     'zulu': 'zu'
 }
 
-def translate_text(text, dest_lang):
-    translator = Translator()
-    translated_text = translator.translate(text, dest=dest_lang)
-    return translated_text.text, translated_text.src
-
 def get_language_code(lang_name):
     return language_codes.get(lang_name.lower())
 
-def speak_text(text, lang):
-    tts = gTTS(text=text, lang=lang, slow=False)
-    tts.save("output.mp3")
-    os.system("start output.mp3")
+def recite_tongue_twister():
+    tongue_twisters = [
+        "Peter Piper picked a peck of pickled peppers.",
+        "She sells sea shells by the sea shore.",
+        "How much wood would a woodchuck chuck if a woodchuck could chuck wood?",
+        "Betty Botter bought some butter, but she said the butter’s bitter.",
+        "I scream, you scream, we all scream for ice cream."
+    ]
+    twister = random.choice(tongue_twisters)
+    print(twister)
+    return twister
 
+def recite_motivational_quote():
+    quotes = [
+        "The only way to do great work is to love what you do. - Steve Jobs",
+        "Success is not how high you have climbed, but how you make a positive difference to the world. - Roy T. Bennett",
+        "Your time is limited, don’t waste it living someone else’s life. - Steve Jobs",
+        "The best revenge is massive success. - Frank Sinatra",
+        "Don’t watch the clock; do what it does. Keep going. - Sam Levenson"
+    ]
+    quote = random.choice(quotes)
+    print(quote)
+    speak(quote)
 
-
-
-
+def tell_fun_fact():
+    fun_facts = [
+        "Did you know that honey never spoils? Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3000 years old and still edible.",
+        "A single cloud can weigh more than a million pounds.",
+        "There are more stars in the universe than grains of sand on all the beaches on Earth.",
+        "A day on Venus is longer than a year on Venus.",
+        "Bananas are berries, but strawberries are not."
+    ]
+    fact = random.choice(fun_facts)
+    print(fact)
+    speak(fact)
+def search_wikipedia(query):
+    try:
+        search_results = wikipedia.search(query)
+        if search_results:
+            first_article = search_results[0]
+            speak(f"Showing results for {first_article} on Wikipedia.")
+            result_summary = wikipedia.summary(first_article, sentences=2)
+            print(result_summary)
+            speak(result_summary)
+        else:
+            speak("No results found on Wikipedia.")
+    except Exception as e:
+        speak("Sorry, I encountered an error while searching Wikipedia.")
+        print(e)
 def calculate(expression):
     try:
         result = eval(expression)
@@ -190,94 +225,77 @@ def calculate(expression):
     except Exception as e:
         return f"Sorry, I couldn't evaluate the expression: {e}"
 
-
 if __name__ == "__main__":
     wishMe()
     while True:
-    # if 1:
-        query = takeCommand().lower()
+        query = takeCommand()
+        if query:
+            query = query.lower()
 
-        # Logic for executing tasks based on query
+            print(f"User said: {query}")  # Debugging line
+
         if 'wikipedia' in query:
             speak('Searching Wikipedia...')
             query = query.replace("wikipedia", "")
-            results = wikipedia.summary(query, sentences=2)
-            speak("According to Wikipedia")
-            print(results)
-            speak(results)
+            search_wikipedia(query)
         elif 'open camera' in query:
-            speak('opening camera')
+            speak('Opening camera')
             os.system("start microsoft.windows.camera:")
-
-
         elif 'open' in query:
-            sites = [["youtube","https://www.youtube.com"],["google","https://www.google.com"],["chatbot","https://www.chatgpt.com"]]
+            sites = [["youtube", "https://www.youtube.com"], ["google", "https://www.google.com"], ["chatbot", "https://www.chatgpt.com"]]
             for site in sites:
-                if f"open {site[0]}".lower() in query.lower():
-                    speak(f"opening {site[0]}...")
+                if f"open {site[0]}" in query:
+                    speak(f"Opening {site[0]}...")
                     webbrowser.open(site[1])
-
         elif "hello" in query or 'hi' in query:
             speak("Hello there!")
         elif "how are you" in query:
-            speak("hi I'm doing great, thank you for asking!")
-        
+            speak("Hi, I'm doing great, thank you for asking!")
         elif "goodbye" in query:
             speak("Goodbye! Have a great day!")
             break
-        elif 'the time' in query:
-            strTime = datetime.datetime.now().strftime("%H:%M:%S")    
-            speak(f"Lucky, the time is {strTime}")
-
+        elif 'time' in query:  # Fixed the condition here
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"The time is {strTime}")
         elif 'thank you' in query:
-            speak('my pleasure, i am happy that i am able to help you. can i do anything else for you?')
-      
+            speak('My pleasure. I am happy that I am able to help you. Can I do anything else for you?')
         elif 'yourself' in query:
-            speak("My name is Jarvis which stands for Just a Rather Very Intelligent System.i am named after an artificial intelligence created by Tony Stark, who later controls his Iron Man and Hulkbuster armor for him. In Avengers: Age of Ultron, after being partially destroyed by Ultron, Jarvis is given physical form as Vision, physically portrayed by Bettany. Different versions of the character also appear in comics published by Marvel Comics, depicted as AI designed by Iron Man and Nadia van Dyne, thank you for listeing to me! is there any other thing that i can do for you?")
-        
-        elif 'whatsapp' in query:
-            speak('opening whatsapp')
+            speak("My name is Jarvis. I was created by Lahari Banukunta. She is a fan of Tony Stark AKA Iron Man. Jarvis stands for Just a Rather Very Intelligent System. I am named after an artificial intelligence created by Tony Stark. Thank you for listening to me! Is there anything else that I can do for you?")
+        elif 'whatsApp' in query:
+            speak('Opening WhatsApp')
             webbrowser.open()
-        elif 'quit' in query or 'by' in query or 'go' in query or 'bye' in query:
-            speak('Bye lucky. Have a nice day')
-            print('quitting')
-            break 
+        elif 'quit' in query or 'exit' in query or 'shut down' in query:
+            speak('Bye! Have a nice day')
+            print('Quitting')
+            break
         elif 'calculate' in query:
-            speak('evaluating')
-            query=query.replace('calculate','')
-            query=query.replace('plus','+')
-            query=query.replace('minus','-')
-            query=query.replace('by','/')
-            query=query.replace('into','*')
-            query=query.replace('point','.')
-
+            speak('Evaluating')
+            query = query.replace('calculate', '')
+            query = query.replace('plus', '+')
+            query = query.replace('minus', '-')
+            query = query.replace('by', '/')
+            query = query.replace('into', '*')
+            query = query.replace('point', '.')
             result = calculate(query)
             speak(result)
         elif 'translate' in query:
-            speak("please tell me the text to translate: ")
+            speak("What do you want to translate?")
             text = takeCommand()
-            speak("okay..!Now tell me the language you want to translate it to.")
-            dest_lang = takeCommand()
-
-    # Get the language code from language name
+            speak("Which language do you want to translate to?")
+            dest_lang = takeCommand().lower()
             lang_code = get_language_code(dest_lang)
-            if lang_code is None:
-                print("Invalid language name.")
-                
-
-            translated_text, detected_lang = translate_text(text, lang_code)
-            print(f"Translated text: {translated_text}")
-
-            speak_text(translated_text, lang_code)
-
-    
-
-       
-        
-
-        
-
-            
-
-            
-    
+            if lang_code:
+                translated_text = translate_text(text, lang_code)
+                print(f"Translated Text: {translated_text}")
+                speak_text(translated_text, lang_code)
+            else:
+                speak("Sorry, I don't support that language.")
+        elif 'tongue twister' in query:
+            twister = recite_tongue_twister()
+            speak(twister)
+        elif 'motivate me' in query or 'quote' in query:
+            recite_motivational_quote()
+        elif 'fun fact' in query:
+            tell_fun_fact()
+        else:
+            speak("Sorry, I didn't understand that.")
